@@ -1,177 +1,49 @@
-from PyQt5.QtCore import QCoreApplication, QMetaObject, QRect
-from PyQt5.QtGui import QFont, QIcon, QPixmap
-from PyQt5.QtWidgets import QWidget, QFrame, QListWidget, QLineEdit, QPushButton, QApplication, QMainWindow, QLabel
-
-import resource as brain
+from ui import Ui_MainWindow
+from PyQt5.QtWidgets import QApplication, QMainWindow, QFileDialog, QMessageBox
 
 
-class UiMainWindow(object):
-    def setupUi(self, MainWindow):
-        def add_password():
-            brain.add(user_entry=self.user_name_entry,
-                      email_entry=self.email_entry,
-                      password_entry=self.password_entry,
-                      list_user=self.listWidget_user_name,
-                      list_email=self.listWidget_email,
-                      list_password=self.listWidget_password)
-
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(500, 501)
-        icon = QIcon()
-        icon.addPixmap(QPixmap("icon.png"), QIcon.Normal, QIcon.Off)
-        MainWindow.setWindowIcon(icon)
-        self.centralwidget = QWidget(MainWindow)
-        self.centralwidget.setObjectName("centralwidget")
-        self.heading_label = QLabel(self.centralwidget)
-        self.heading_label.setGeometry(QRect(160, 9, 153, 33))
-        font = QFont()
-        font.setPointSize(20)
-        font.setBold(True)
-        font.setWeight(75)
-        self.heading_label.setFont(font)
-        self.heading_label.setObjectName("heading_label")
-        self.add_button = QPushButton(self.centralwidget)
-        self.add_button.setGeometry(QRect(9, 171, 471, 27))
-        font = QFont()
-        font.setPointSize(12)
-        font.setBold(True)
-        font.setWeight(75)
-        self.add_button.setFont(font)
-        self.add_button.setObjectName("add_button")
-        self.add_button.clicked.connect(add_password)
-        self.email_entry = QLineEdit(self.centralwidget)
-        self.email_entry.setGeometry(QRect(217, 89, 261, 35))
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        font.setWeight(75)
-        self.email_entry.setFont(font)
-        self.email_entry.setObjectName("email_entry")
-        self.password_entry = QLineEdit(self.centralwidget)
-        self.password_entry.setGeometry(QRect(217, 130, 261, 35))
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        font.setWeight(75)
-        self.password_entry.setFont(font)
-        self.password_entry.setObjectName("password_entry")
-        self.email_label = QLabel(self.centralwidget)
-        self.email_label.setGeometry(QRect(10, 90, 75, 29))
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        font.setWeight(75)
-        self.email_label.setFont(font)
-        self.email_label.setFrameShadow(QFrame.Raised)
-        self.email_label.setObjectName("email_label")
-        self.password_label = QLabel(self.centralwidget)
-        self.password_label.setGeometry(QRect(9, 130, 124, 29))
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        font.setWeight(75)
-        self.password_label.setFont(font)
-        self.password_label.setObjectName("password_label")
-        self.email_label_for_showing = QLabel(self.centralwidget)
-        self.email_label_for_showing.setGeometry(QRect(200, 210, 66, 29))
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        font.setWeight(75)
-        self.email_label_for_showing.setFont(font)
-        self.email_label_for_showing.setFrameShadow(QFrame.Raised)
-        self.email_label_for_showing.setObjectName("email_label_for_showing")
-        self.password_label_for_showing = QLabel(self.centralwidget)
-        self.password_label_for_showing.setGeometry(QRect(330, 210, 115, 29))
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        font.setWeight(75)
-        self.password_label_for_showing.setFont(font)
-        self.password_label_for_showing.setObjectName("password_label_for_showing")
-        self.listWidget_email = QListWidget(self.centralwidget)
-        self.listWidget_email.setGeometry(QRect(160, 239, 151, 253))
-        font = QFont()
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setWeight(75)
-        self.listWidget_email.setFont(font)
-        self.listWidget_email.setObjectName("listWidget_email")
-        self.listWidget_password = QListWidget(self.centralwidget)
-        self.listWidget_password.setGeometry(QRect(330, 239, 161, 253))
-        font = QFont()
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setWeight(75)
-        self.listWidget_password.setFont(font)
-        self.listWidget_password.setObjectName("listWidget_password")
-        self.listWidget_user_name = QListWidget(self.centralwidget)
-        self.listWidget_user_name.setGeometry(QRect(9, 239, 139, 253))
-        font = QFont()
-        font.setPointSize(15)
-        font.setBold(True)
-        font.setWeight(75)
-        self.listWidget_user_name.setFont(font)
-        self.listWidget_user_name.setObjectName("listWidget_user_name")
-        self.user_name_label_for_showing = QLabel(self.centralwidget)
-        self.user_name_label_for_showing.setGeometry(QRect(9, 210, 131, 29))
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        font.setWeight(75)
-        self.user_name_label_for_showing.setFont(font)
-        self.user_name_label_for_showing.setFrameShadow(QFrame.Raised)
-        self.user_name_label_for_showing.setObjectName("user_name_label_for_showing")
-        self.user_name_label = QLabel(self.centralwidget)
-        self.user_name_label.setGeometry(QRect(10, 50, 140, 29))
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        font.setWeight(75)
-        self.user_name_label.setFont(font)
-        self.user_name_label.setFrameShadow(QFrame.Raised)
-        self.user_name_label.setObjectName("user_name_label")
-        self.user_name_entry = QLineEdit(self.centralwidget)
-        self.user_name_entry.setGeometry(QRect(217, 48, 261, 35))
-        font = QFont()
-        font.setPointSize(18)
-        font.setBold(True)
-        font.setWeight(75)
-        self.user_name_entry.setFont(font)
-        self.user_name_entry.setObjectName("user_name_entry")
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.email_label.setBuddy(self.email_entry)
-        self.password_label.setBuddy(self.password_entry)
-        self.email_label_for_showing.setBuddy(self.listWidget_email)
-        self.password_label_for_showing.setBuddy(self.listWidget_password)
-        self.user_name_label_for_showing.setBuddy(self.listWidget_user_name)
-
-        self.retranslateUi(MainWindow)
-        QMetaObject.connectSlotsByName(MainWindow)
-
-        brain.show(listWidget_user=self.listWidget_user_name,
-                   listWidget_email=self.listWidget_email,
-                   listWidget_password=self.listWidget_password)
-
-    def retranslateUi(self, MainWindow):
-        _translate = QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Password Manager"))
-        self.heading_label.setText(_translate("MainWindow", "Add Details"))
-        self.add_button.setText(_translate("MainWindow", "ADD"))
-        self.email_label.setText(_translate("MainWindow", "Email:"))
-        self.password_label.setText(_translate("MainWindow", "Password:"))
-        self.email_label_for_showing.setText(_translate("MainWindow", "Email"))
-        self.password_label_for_showing.setText(_translate("MainWindow", "Password"))
-        self.user_name_label_for_showing.setText(_translate("MainWindow", "User Name"))
-        self.user_name_label.setText(_translate("MainWindow", "User Name:"))
+class MainWindow(QMainWindow, Ui_MainWindow):
+    def __init__(self, *args, **kwargs):
+        super(MainWindow, self).__init__(*args, **kwargs)
+        self.setupUi(self)
+        self.show_all()
+        self.add_button.clicked.connect(self.add_details)
+        self.show()
 
 
-if __name__ == "__main__":
-    import sys
 
-    app = QApplication(sys.argv)
-    MainWindow = QMainWindow()
-    ui = UiMainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
-    sys.exit(app.exec_())
+
+    def add_details(self):
+        u = self.user_name_entry.text()
+        e = self.email_entry.text()
+        p = self.password_entry.text()
+
+        f = open("emails.txt", "a")
+
+        f.write(u)
+        f.write(",")
+        f.write(e)
+        f.write(",")
+        f.write(p)
+        f.write(",\n")
+
+        self.listWidget_user_name.addItem(u)
+        self.listWidget_email.addItem(e)
+        self.listWidget_password.addItem(p)
+
+
+    def show_all(self):
+        f = open('emails.txt', 'r')
+        for line in f:
+            split = line.split(',')
+            self.listWidget_user_name.addItem(split[0])
+            self.listWidget_email.addItem(split[1])
+            self.listWidget_password.addItem(split[2])
+        f.close()
+
+
+
+if __name__ == '__main__':
+    app = QApplication([])
+    window = MainWindow()
+    app.exec_()
