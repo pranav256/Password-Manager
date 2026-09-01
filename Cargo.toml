@@ -1,0 +1,7 @@
+[package]
+name = "rusty-vault"
+version = "0.1.0"
+edition = "2021"
+authors = ["Pranav <pranav256>"]
+description = "A modern, secure, and lightweight desktop password manager written in Rust"
+license = "MIT"

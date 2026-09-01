@@ -1,0 +1,6 @@
+/target
+**/*.rs.bk
+*.tmp
+vault.enc
+emails.txt
+Cargo.lock
