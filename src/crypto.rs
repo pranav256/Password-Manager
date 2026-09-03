@@ -1,4 +1,7 @@
-use aes_gcm::aead::OsRng;
+use aes_gcm::{
+    aead::{Aead, KeyInit, OsRng},
+    Aes256Gcm, Nonce,
+};
 use argon2::Argon2;
 use rand::RngCore;
 use serde::{Deserialize, Serialize};
@@ -76,4 +79,24 @@ pub fn generate_nonce() -> [u8; NONCE_LEN] {
     let mut nonce = [0u8; NONCE_LEN];
     OsRng.fill_bytes(&mut nonce);
     nonce
+}
+
+/// Encrypt plaintext with derived key using AES-256-GCM
+pub fn encrypt(key: &DerivedKey, plaintext: &[u8]) -> Result<EncryptedEnvelope, CryptoError> {
+    let cipher = Aes256Gcm::new_from_slice(key.as_bytes())
+        .map_err(|e| CryptoError::EncryptionFailed(e.to_string()))?;
+
+    let nonce_bytes = generate_nonce();
+    let nonce = Nonce::from_slice(&nonce_bytes);
+
+    let ciphertext = cipher
+        .encrypt(nonce, plaintext)
+        .map_err(|e| CryptoError::EncryptionFailed(e.to_string()))?;
+
+    Ok(EncryptedEnvelope {
+        version: 1,
+        salt: Vec::new(),
+        nonce: nonce_bytes.to_vec(),
+        ciphertext,
+    })
 }
