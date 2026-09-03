@@ -1,6 +1,7 @@
 use aes_gcm::aead::OsRng;
 use argon2::Argon2;
 use rand::RngCore;
+use serde::{Deserialize, Serialize};
 use std::fmt;
 use zeroize::{Zeroize, ZeroizeOnDrop};
 
@@ -42,6 +43,15 @@ impl DerivedKey {
     }
 }
 
+/// Encrypted container format written to disk
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct EncryptedEnvelope {
+    pub version: u32,
+    pub salt: Vec<u8>,
+    pub nonce: Vec<u8>,
+    pub ciphertext: Vec<u8>,
+}
+
 /// Derive a 256-bit key from master password and salt using Argon2id
 pub fn derive_key(password: &str, salt: &[u8]) -> Result<DerivedKey, CryptoError> {
     let mut key = [0u8; KEY_LEN];
@@ -59,4 +69,11 @@ pub fn generate_salt() -> [u8; SALT_LEN] {
     let mut salt = [0u8; SALT_LEN];
     OsRng.fill_bytes(&mut salt);
     salt
+}
+
+/// Generate cryptographically secure nonce for AES-GCM
+pub fn generate_nonce() -> [u8; NONCE_LEN] {
+    let mut nonce = [0u8; NONCE_LEN];
+    OsRng.fill_bytes(&mut nonce);
+    nonce
 }
