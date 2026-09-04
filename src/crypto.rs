@@ -116,3 +116,37 @@ pub fn decrypt(key: &DerivedKey, envelope: &EncryptedEnvelope) -> Result<Vec<u8>
         .decrypt(nonce, envelope.ciphertext.as_ref())
         .map_err(|_| CryptoError::DecryptionFailed)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_encrypt_decrypt_roundtrip() {
+        let password = "super_secret_master_password_123!";
+        let salt = generate_salt();
+        let key = derive_key(password, &salt).expect("Key derivation should succeed");
+
+        let secret_data = b"{\"user\": \"alice\", \"pass\": \"CorrectHorseBatteryStaple\"}";
+        let envelope = encrypt(&key, secret_data).expect("Encryption should succeed");
+
+        let decrypted = decrypt(&key, &envelope).expect("Decryption should succeed");
+        assert_eq!(decrypted, secret_data);
+    }
+
+    #[test]
+    fn test_wrong_password_fails_decryption() {
+        let password = "correct_password";
+        let wrong_password = "wrong_password";
+        let salt = generate_salt();
+
+        let key1 = derive_key(password, &salt).unwrap();
+        let key2 = derive_key(wrong_password, &salt).unwrap();
+
+        let secret_data = b"sensitive credentials";
+        let envelope = encrypt(&key1, secret_data).unwrap();
+
+        let result = decrypt(&key2, &envelope);
+        assert!(result.is_err());
+    }
+}
