@@ -100,3 +100,19 @@ pub fn encrypt(key: &DerivedKey, plaintext: &[u8]) -> Result<EncryptedEnvelope, 
         ciphertext,
     })
 }
+
+/// Decrypt ciphertext with derived key using AES-256-GCM
+pub fn decrypt(key: &DerivedKey, envelope: &EncryptedEnvelope) -> Result<Vec<u8>, CryptoError> {
+    if envelope.nonce.len() != NONCE_LEN {
+        return Err(CryptoError::InvalidPayload);
+    }
+
+    let cipher =
+        Aes256Gcm::new_from_slice(key.as_bytes()).map_err(|_| CryptoError::DecryptionFailed)?;
+
+    let nonce = Nonce::from_slice(&envelope.nonce);
+
+    cipher
+        .decrypt(nonce, envelope.ciphertext.as_ref())
+        .map_err(|_| CryptoError::DecryptionFailed)
+}
