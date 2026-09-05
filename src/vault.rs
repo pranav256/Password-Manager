@@ -104,6 +104,24 @@ impl Vault {
     pub fn add_entry(&mut self, entry: VaultEntry) {
         self.entries.push(entry);
     }
+
+    /// Remove an entry by ID
+    pub fn remove_entry(&mut self, id: &str) -> bool {
+        let initial_len = self.entries.len();
+        self.entries.retain(|e| e.id != id);
+        self.entries.len() < initial_len
+    }
+
+    /// Update an existing entry
+    pub fn update_entry(&mut self, updated: VaultEntry) -> bool {
+        if let Some(existing) = self.entries.iter_mut().find(|e| e.id == updated.id) {
+            *existing = updated;
+            existing.updated_at = Utc::now();
+            true
+        } else {
+            false
+        }
+    }
 }
 
 impl Default for Vault {
