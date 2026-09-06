@@ -122,6 +122,24 @@ impl Vault {
             false
         }
     }
+
+    /// Search entries case-insensitively by service, username, email, or notes
+    pub fn search(&self, query: &str) -> Vec<&VaultEntry> {
+        if query.trim().is_empty() {
+            return self.entries.iter().collect();
+        }
+
+        let q = query.to_lowercase();
+        self.entries
+            .iter()
+            .filter(|e| {
+                e.service.to_lowercase().contains(&q)
+                    || e.username.to_lowercase().contains(&q)
+                    || e.email.to_lowercase().contains(&q)
+                    || e.notes.to_lowercase().contains(&q)
+            })
+            .collect()
+    }
 }
 
 impl Default for Vault {
