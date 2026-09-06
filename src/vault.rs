@@ -1,7 +1,9 @@
-use crate::crypto::{self, CryptoError, SALT_LEN};
+use crate::crypto::{self, CryptoError, DerivedKey, EncryptedEnvelope, SALT_LEN};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use std::fs;
 use std::io;
+use std::path::Path;
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 pub struct VaultEntry {
@@ -139,6 +141,30 @@ impl Vault {
                     || e.notes.to_lowercase().contains(&q)
             })
             .collect()
+    }
+
+    /// Save the vault to an encrypted file using atomic write (tempfile -> rename)
+    pub fn save_to_file(&self, path: &Path, key: &DerivedKey) -> Result<(), VaultError> {
+        let vault_data = VaultData {
+            version: 1,
+            entries: self.entries.clone(),
+        };
+
+        let json_bytes = serde_json::to_vec(&vault_data)?;
+        let mut envelope = crypto::encrypt(key, &json_bytes)?;
+        envelope.salt = self.salt.to_vec();
+
+        let encoded = serde_json::to_vec_pretty(&envelope)?;
+
+        if let Some(parent) = path.parent() {
+            fs::create_dir_all(parent)?;
+        }
+
+        let temp_path = path.with_extension("tmp");
+        fs::write(&temp_path, encoded)?;
+        fs::rename(&temp_path, path)?;
+
+        Ok(())
     }
 }
 
