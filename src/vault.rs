@@ -166,6 +166,31 @@ impl Vault {
 
         Ok(())
     }
+
+    /// Load and decrypt the vault from disk
+    pub fn load_from_file(path: &Path, password: &str) -> Result<(Self, DerivedKey), VaultError> {
+        let raw_bytes = fs::read(path)?;
+        let envelope: EncryptedEnvelope = serde_json::from_slice(&raw_bytes)?;
+
+        if envelope.salt.len() != SALT_LEN {
+            return Err(VaultError::InvalidSalt);
+        }
+
+        let mut salt = [0u8; SALT_LEN];
+        salt.copy_from_slice(&envelope.salt);
+
+        let key = crypto::derive_key(password, &salt)?;
+        let decrypted_bytes = crypto::decrypt(&key, &envelope)?;
+        let vault_data: VaultData = serde_json::from_slice(&decrypted_bytes)?;
+
+        Ok((
+            Self {
+                salt,
+                entries: vault_data.entries,
+            },
+            key,
+        ))
+    }
 }
 
 impl Default for Vault {
