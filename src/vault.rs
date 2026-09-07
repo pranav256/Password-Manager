@@ -81,7 +81,7 @@ impl From<serde_json::Error> for VaultError {
 }
 
 impl std::fmt::Display for VaultError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             VaultError::Crypto(e) => write!(f, "Crypto error: {}", e),
             VaultError::Io(e) => write!(f, "I/O error: {}", e),
@@ -190,6 +190,45 @@ impl Vault {
             },
             key,
         ))
+    }
+
+    /// Legacy importer: reads old Python emails.txt format (chr(ord(c) - 5))
+    pub fn import_legacy_txt(&mut self, path: &Path) -> Result<usize, io::Error> {
+        let content = fs::read_to_string(path)?;
+        let mut count = 0;
+
+        for line in content.lines() {
+            let parts: Vec<&str> = line.split(',').collect();
+            if parts.len() >= 3 {
+                let decrypt_str = |s: &str| -> String {
+                    s.chars()
+                        .map(|c| {
+                            if c == ' ' {
+                                ' '
+                            } else {
+                                ((c as u32).saturating_sub(5)) as u8 as char
+                            }
+                        })
+                        .collect()
+                };
+
+                let user = decrypt_str(parts[0].trim());
+                let email = decrypt_str(parts[1].trim());
+                let pass = decrypt_str(parts[2].trim());
+
+                if !user.is_empty() || !email.is_empty() || !pass.is_empty() {
+                    let service = if !user.is_empty() {
+                        format!("Account ({})", user)
+                    } else {
+                        "Imported Account".to_string()
+                    };
+                    self.add_entry(VaultEntry::new(service, user, email, pass));
+                    count += 1;
+                }
+            }
+        }
+
+        Ok(count)
     }
 }
 
