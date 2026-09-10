@@ -92,3 +92,43 @@ pub fn generate_password(config: &GeneratorConfig) -> String {
     password.shuffle(&mut rng);
     password.into_iter().collect()
 }
+
+/// Calculate estimated password entropy in bits
+pub fn calculate_entropy(password: &str) -> f64 {
+    let mut pool_size = 0;
+    let mut has_lower = false;
+    let mut has_upper = false;
+    let mut has_digit = false;
+    let mut has_symbol = false;
+
+    for c in password.chars() {
+        if c.is_ascii_lowercase() {
+            has_lower = true;
+        } else if c.is_ascii_uppercase() {
+            has_upper = true;
+        } else if c.is_ascii_digit() {
+            has_digit = true;
+        } else {
+            has_symbol = true;
+        }
+    }
+
+    if has_lower {
+        pool_size += 26;
+    }
+    if has_upper {
+        pool_size += 26;
+    }
+    if has_digit {
+        pool_size += 10;
+    }
+    if has_symbol {
+        pool_size += 32;
+    }
+
+    if pool_size == 0 {
+        return 0.0;
+    }
+
+    password.len() as f64 * (pool_size as f64).log2()
+}
