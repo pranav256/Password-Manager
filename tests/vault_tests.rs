@@ -1,3 +1,4 @@
+use rusty_vault::generator::{generate_password, GeneratorConfig};
 use rusty_vault::vault::{Vault, VaultEntry};
 
 #[test]
@@ -19,4 +20,18 @@ fn test_vault_crud_lifecycle() {
     let deleted = vault.remove_entry(&entry.id);
     assert!(deleted);
     assert_eq!(vault.entries.len(), 0);
+}
+
+#[test]
+fn test_password_generator_constraints() {
+    let config = GeneratorConfig {
+        length: 24,
+        uppercase: true,
+        lowercase: true,
+        numbers: true,
+        symbols: true,
+        exclude_ambiguous: true,
+    };
+    let password = generate_password(&config);
+    assert_eq!(password.len(), 24);
 }

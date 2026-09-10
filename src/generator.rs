@@ -132,3 +132,16 @@ pub fn calculate_entropy(password: &str) -> f64 {
 
     password.len() as f64 * (pool_size as f64).log2()
 }
+
+/// Categorize password strength
+pub fn strength_rating(entropy: f64) -> (&'static str, (u8, u8, u8)) {
+    if entropy < 36.0 {
+        ("Weak", (230, 80, 80))
+    } else if entropy < 60.0 {
+        ("Fair", (230, 160, 50))
+    } else if entropy < 85.0 {
+        ("Strong", (80, 180, 100))
+    } else {
+        ("Very Strong", (40, 200, 120))
+    }
+}
