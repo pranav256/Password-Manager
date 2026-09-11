@@ -20,7 +20,15 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "RustyVault",
         options,
-        Box::new(|_cc| {
+        Box::new(|cc| {
+            let mut visuals = egui::Visuals::dark();
+            visuals.window_rounding = 8.0.into();
+            visuals.widgets.noninteractive.rounding = 6.0.into();
+            visuals.widgets.inactive.rounding = 6.0.into();
+            visuals.widgets.hovered.rounding = 6.0.into();
+            visuals.widgets.active.rounding = 6.0.into();
+            cc.egui_ctx.set_visuals(visuals);
+
             Ok(Box::new(RustyVaultApp::new()))
         }),
     )
@@ -116,8 +124,17 @@ fn dirs_vault_path() -> PathBuf {
 
 impl eframe::App for RustyVaultApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        egui::TopBottomPanel::top("top_header").show(ctx, |ui| {
+            ui.add_space(6.0);
+            ui.horizontal(|ui| {
+                ui.heading(RichText::new("🔐 RustyVault").strong());
+                ui.label(RichText::new("v0.1.0").weak());
+            });
+            ui.add_space(6.0);
+        });
+
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("RustyVault");
+            ui.label("RustyVault UI Ready");
         });
     }
 }
