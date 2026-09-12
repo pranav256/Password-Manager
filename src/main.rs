@@ -44,8 +44,10 @@ struct RustyVaultApp {
     is_new_vault: bool,
     unlock_error: Option<String>,
 
+    // Search
     search_query: String,
 
+    // Add / Edit Entry Dialog
     show_entry_dialog: bool,
     editing_entry: Option<VaultEntry>,
     edit_service: String,
@@ -56,10 +58,12 @@ struct RustyVaultApp {
     edit_notes: String,
     edit_show_password: bool,
 
+    // Password Generator Modal
     show_generator_modal: bool,
     generator_config: GeneratorConfig,
     generated_password: String,
 
+    // Notifications
     toast_message: Option<(String, std::time::Instant)>,
 }
 
@@ -134,7 +138,58 @@ impl eframe::App for RustyVaultApp {
         });
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.label("RustyVault UI Ready");
+            if self.is_locked {
+                self.render_locked_view(ui);
+            } else {
+                ui.label("Vault unlocked!");
+            }
+        });
+    }
+}
+
+impl RustyVaultApp {
+    fn render_locked_view(&mut self, ui: &mut egui::Ui) {
+        ui.vertical_centered(|ui| {
+            ui.add_space(50.0);
+            ui.label(RichText::new("Enter Master Password").size(22.0).strong());
+            ui.add_space(8.0);
+
+            if self.is_new_vault {
+                ui.label(RichText::new("No existing vault found. Create a strong master password to initialize your encrypted vault.").color(Color32::LIGHT_GRAY));
+            } else {
+                ui.label(RichText::new("Vault is encrypted with AES-256-GCM & Argon2id.").weak());
+            }
+
+            ui.add_space(20.0);
+
+            ui.horizontal(|ui| {
+                ui.add_space(ui.available_width() / 2.0 - 150.0);
+                ui.vertical(|ui| {
+                    ui.label("Master Password:");
+                    let pass_edit = ui.add(
+                        egui::TextEdit::singleline(&mut self.master_password_input)
+                            .password(true)
+                            .desired_width(300.0),
+                    );
+
+                    if self.is_new_vault {
+                        ui.add_space(8.0);
+                        ui.label("Confirm Master Password:");
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.confirm_password_input)
+                                .password(true)
+                                .desired_width(300.0),
+                        );
+                    }
+
+                    ui.add_space(16.0);
+
+                    let action_label = if self.is_new_vault { "Create Vault" } else { "Unlock Vault" };
+                    if ui.button(RichText::new(action_label).size(16.0)).clicked() {
+                        // Will connect unlock handler in next step
+                    }
+                });
+            });
         });
     }
 }
