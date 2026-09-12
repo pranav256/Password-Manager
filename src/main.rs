@@ -199,6 +199,14 @@ impl RustyVaultApp {
                     {
                         self.handle_unlock_or_create();
                     }
+
+                    ui.add_space(24.0);
+                    ui.separator();
+                    ui.add_space(12.0);
+
+                    if ui.button("📥 Import from legacy Python emails.txt").clicked() {
+                        self.handle_legacy_import();
+                    }
                 });
             });
         });
@@ -250,5 +258,39 @@ impl RustyVaultApp {
                         Some("Incorrect master password or corrupted vault file".to_string());
                 }
             }
+        }
+    }
+
+    fn handle_legacy_import(&mut self) {
+        let legacy_file = Path::new("emails.txt");
+        if !legacy_file.exists() {
+            self.unlock_error =
+                Some("Legacy 'emails.txt' not found in current directory".to_string());
+            return;
+        }
+
+        if self.master_password_input.is_empty() {
+            self.unlock_error =
+                Some("Enter master password above first to encrypt imported items".to_string());
+            return;
+        }
+
+        let mut vault = Vault::new();
+        match vault.import_legacy_txt(legacy_file) {
+            Ok(count) => match crypto::derive_key(&self.master_password_input, &vault.salt) {
+                Ok(key) => {
+                    let _ = vault.save_to_file(&self.vault_path, &key);
+                    self.is_new_vault = false;
+                    self.vault = Some(vault);
+                    self.key = Some(key);
+                    self.is_locked = false;
+                    self.show_toast(format!(
+                        "Successfully imported {} accounts from legacy Python format!",
+                        count
+                    ));
+                }
+                Err(e) => self.unlock_error = Some(e.to_string()),
+            },
+            Err(e) => self.unlock_error = Some(format!("Import failed: {}", e)),
         }
     }
