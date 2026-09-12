@@ -184,12 +184,71 @@ impl RustyVaultApp {
 
                     ui.add_space(16.0);
 
+                    if let Some(err) = &self.unlock_error {
+                        ui.add_space(8.0);
+                        ui.label(RichText::new(err).color(Color32::from_rgb(240, 80, 80)));
+                    }
+
+                    ui.add_space(16.0);
+
                     let action_label = if self.is_new_vault { "Create Vault" } else { "Unlock Vault" };
-                    if ui.button(RichText::new(action_label).size(16.0)).clicked() {
-                        // Will connect unlock handler in next step
+                    let enter_pressed = pass_edit.lost_focus() && ui.input(|i| i.key_pressed(egui::Key::Enter));
+
+                    if (ui.button(RichText::new(action_label).size(16.0)).clicked() || enter_pressed)
+                        && !self.master_password_input.is_empty()
+                    {
+                        self.handle_unlock_or_create();
                     }
                 });
             });
         });
     }
 }
+
+    fn handle_unlock_or_create(&mut self) {
+        if self.is_new_vault {
+            if self.master_password_input != self.confirm_password_input {
+                self.unlock_error = Some("Passwords do not match".to_string());
+                return;
+            }
+            if self.master_password_input.len() < 8 {
+                self.unlock_error =
+                    Some("Master password should be at least 8 characters".to_string());
+                return;
+            }
+
+            let vault = Vault::new();
+            match crypto::derive_key(&self.master_password_input, &vault.salt) {
+                Ok(key) => {
+                    if let Err(e) = vault.save_to_file(&self.vault_path, &key) {
+                        self.unlock_error = Some(format!("Failed to save vault: {}", e));
+                        return;
+                    }
+                    self.unlock_error = None;
+                    self.is_new_vault = false;
+                    self.vault = Some(vault);
+                    self.key = Some(key);
+                    self.is_locked = false;
+                    self.show_toast("New vault created successfully!");
+                }
+                Err(e) => {
+                    self.unlock_error = Some(format!("Key derivation error: {}", e));
+                }
+            }
+        } else {
+            match Vault::load_from_file(&self.vault_path, &self.master_password_input) {
+                Ok((vault, key)) => {
+                    self.unlock_error = None;
+                    let count = vault.entries.len();
+                    self.vault = Some(vault);
+                    self.key = Some(key);
+                    self.is_locked = false;
+                    self.show_toast(format!("Vault unlocked! ({} entries)", count));
+                }
+                Err(_) => {
+                    self.unlock_error =
+                        Some("Incorrect master password or corrupted vault file".to_string());
+                }
+            }
+        }
+    }
