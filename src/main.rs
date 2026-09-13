@@ -340,4 +340,42 @@ impl RustyVaultApp {
         ui.add_space(10.0);
         ui.separator();
         ui.add_space(6.0);
+
+        let filtered_entries: Vec<VaultEntry> = self
+            .vault
+            .as_ref()
+            .map(|v| v.search(&self.search_query).into_iter().cloned().collect())
+            .unwrap_or_default();
+
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            egui::Grid::new("vault_entries_grid")
+                .striped(true)
+                .min_col_width(120.0)
+                .spacing([14.0, 10.0])
+                .show(ui, |ui| {
+                    ui.label(RichText::new("Service / Title").strong());
+                    ui.label(RichText::new("Username / Email").strong());
+                    ui.label(RichText::new("Password").strong());
+                    ui.label(RichText::new("Actions").strong());
+                    ui.end_row();
+
+                    for entry in &filtered_entries {
+                        ui.label(RichText::new(&entry.service).strong());
+
+                        let user_email = if !entry.username.is_empty() && !entry.email.is_empty() {
+                            format!("{} ({})", entry.username, entry.email)
+                        } else if !entry.username.is_empty() {
+                            entry.username.clone()
+                        } else {
+                            entry.email.clone()
+                        };
+                        ui.label(user_email);
+
+                        ui.label("••••••••••••");
+
+                        ui.label("Actions pending");
+                        ui.end_row();
+                    }
+                });
+        });
     }
