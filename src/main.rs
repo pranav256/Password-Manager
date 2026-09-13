@@ -341,6 +341,7 @@ impl RustyVaultApp {
         ui.separator();
         ui.add_space(6.0);
 
+        let mut entry_to_delete: Option<String> = None;
         let filtered_entries: Vec<VaultEntry> = self
             .vault
             .as_ref()
@@ -373,9 +374,42 @@ impl RustyVaultApp {
 
                         ui.label("••••••••••••");
 
-                        ui.label("Actions pending");
+                        ui.horizontal(|ui| {
+                            if ui.button("📋 Copy Pass").clicked() {
+                                ui.output_mut(|o| o.copied_text = entry.password.clone());
+                                self.show_toast(format!("Copied password for {}", entry.service));
+                            }
+
+                            if ui.button("📋 Copy User").clicked() {
+                                let to_copy = if !entry.username.is_empty() {
+                                    &entry.username
+                                } else {
+                                    &entry.email
+                                };
+                                ui.output_mut(|o| o.copied_text = to_copy.clone());
+                                self.show_toast("Copied username to clipboard");
+                            }
+
+                            if ui
+                                .button(RichText::new("🗑").color(Color32::from_rgb(220, 80, 80)))
+                                .clicked()
+                            {
+                                entry_to_delete = Some(entry.id.clone());
+                            }
+                        });
+
                         ui.end_row();
                     }
                 });
         });
+
+        if let Some(id) = entry_to_delete {
+            if let Some(vault) = &mut self.vault {
+                vault.remove_entry(&id);
+                if let Some(key) = &self.key {
+                    let _ = vault.save_to_file(&self.vault_path, key);
+                }
+            }
+            self.show_toast("Entry deleted");
+        }
     }
