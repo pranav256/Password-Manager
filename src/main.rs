@@ -137,11 +137,30 @@ impl eframe::App for RustyVaultApp {
             ui.add_space(6.0);
         });
 
+        egui::TopBottomPanel::top("top_header").show(ctx, |ui| {
+            ui.add_space(6.0);
+            ui.horizontal(|ui| {
+                ui.heading(RichText::new("🔐 RustyVault").strong());
+                ui.label(RichText::new("v0.1.0").weak());
+
+                ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                    if !self.is_locked {
+                        if ui.button("🔒 Lock Vault").clicked() {
+                            self.lock_vault();
+                        }
+                    } else {
+                        ui.label(RichText::new("Locked").weak());
+                    }
+                });
+            });
+            ui.add_space(6.0);
+        });
+
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.is_locked {
                 self.render_locked_view(ui);
             } else {
-                ui.label("Vault unlocked!");
+                self.render_unlocked_view(ui);
             }
         });
     }
@@ -293,4 +312,32 @@ impl RustyVaultApp {
             },
             Err(e) => self.unlock_error = Some(format!("Import failed: {}", e)),
         }
+    }
+
+    fn render_unlocked_view(&mut self, ui: &mut egui::Ui) {
+        let total_count = self.vault.as_ref().map(|v| v.entries.len()).unwrap_or(0);
+
+        ui.horizontal(|ui| {
+            ui.add(
+                egui::TextEdit::singleline(&mut self.search_query)
+                    .hint_text("🔍 Search accounts, emails, services...")
+                    .desired_width(280.0),
+            );
+
+            if ui.button("➕ Add Entry").clicked() {
+                self.show_entry_dialog = true;
+            }
+
+            if ui.button("🎲 Generate Password").clicked() {
+                self.show_generator_modal = true;
+            }
+
+            ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                ui.label(RichText::new(format!("Total: {} accounts", total_count)).weak());
+            });
+        });
+
+        ui.add_space(10.0);
+        ui.separator();
+        ui.add_space(6.0);
     }
