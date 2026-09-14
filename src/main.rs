@@ -133,15 +133,6 @@ impl eframe::App for RustyVaultApp {
             ui.horizontal(|ui| {
                 ui.heading(RichText::new("🔐 RustyVault").strong());
                 ui.label(RichText::new("v0.1.0").weak());
-            });
-            ui.add_space(6.0);
-        });
-
-        egui::TopBottomPanel::top("top_header").show(ctx, |ui| {
-            ui.add_space(6.0);
-            ui.horizontal(|ui| {
-                ui.heading(RichText::new("🔐 RustyVault").strong());
-                ui.label(RichText::new("v0.1.0").weak());
 
                 ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                     if !self.is_locked {
@@ -163,6 +154,10 @@ impl eframe::App for RustyVaultApp {
                 self.render_unlocked_view(ui);
             }
         });
+
+        if self.show_entry_dialog {
+            self.render_entry_dialog(ctx);
+        }
     }
 }
 
@@ -201,8 +196,6 @@ impl RustyVaultApp {
                         );
                     }
 
-                    ui.add_space(16.0);
-
                     if let Some(err) = &self.unlock_error {
                         ui.add_space(8.0);
                         ui.label(RichText::new(err).color(Color32::from_rgb(240, 80, 80)));
@@ -230,7 +223,6 @@ impl RustyVaultApp {
             });
         });
     }
-}
 
     fn handle_unlock_or_create(&mut self) {
         if self.is_new_vault {
@@ -325,7 +317,7 @@ impl RustyVaultApp {
             );
 
             if ui.button("➕ Add Entry").clicked() {
-                self.show_entry_dialog = true;
+                self.open_add_dialog();
             }
 
             if ui.button("🎲 Generate Password").clicked() {
@@ -341,12 +333,15 @@ impl RustyVaultApp {
         ui.separator();
         ui.add_space(6.0);
 
-        let mut entry_to_delete: Option<String> = None;
         let filtered_entries: Vec<VaultEntry> = self
             .vault
             .as_ref()
             .map(|v| v.search(&self.search_query).into_iter().cloned().collect())
             .unwrap_or_default();
+
+        let mut entry_to_delete: Option<String> = None;
+        let mut entry_to_edit: Option<VaultEntry> = None;
+        let mut toast_to_show: Option<String> = None;
 
         egui::ScrollArea::vertical().show(ui, |ui| {
             egui::Grid::new("vault_entries_grid")
@@ -377,7 +372,8 @@ impl RustyVaultApp {
                         ui.horizontal(|ui| {
                             if ui.button("📋 Copy Pass").clicked() {
                                 ui.output_mut(|o| o.copied_text = entry.password.clone());
-                                self.show_toast(format!("Copied password for {}", entry.service));
+                                toast_to_show =
+                                    Some(format!("Copied password for {}", entry.service));
                             }
 
                             if ui.button("📋 Copy User").clicked() {
@@ -387,7 +383,11 @@ impl RustyVaultApp {
                                     &entry.email
                                 };
                                 ui.output_mut(|o| o.copied_text = to_copy.clone());
-                                self.show_toast("Copied username to clipboard");
+                                toast_to_show = Some("Copied username to clipboard".to_string());
+                            }
+
+                            if ui.button("✏ Edit").clicked() {
+                                entry_to_edit = Some(entry.clone());
                             }
 
                             if ui
@@ -403,6 +403,10 @@ impl RustyVaultApp {
                 });
         });
 
+        if let Some(msg) = toast_to_show {
+            self.show_toast(msg);
+        }
+
         if let Some(id) = entry_to_delete {
             if let Some(vault) = &mut self.vault {
                 vault.remove_entry(&id);
@@ -412,4 +416,137 @@ impl RustyVaultApp {
             }
             self.show_toast("Entry deleted");
         }
+
+        if let Some(entry) = entry_to_edit {
+            self.open_edit_dialog(entry);
+        }
     }
+
+    fn open_add_dialog(&mut self) {
+        self.editing_entry = None;
+        self.edit_service.clear();
+        self.edit_username.clear();
+        self.edit_email.clear();
+        self.edit_password.clear();
+        self.edit_url.clear();
+        self.edit_notes.clear();
+        self.edit_show_password = false;
+        self.show_entry_dialog = true;
+    }
+
+    fn open_edit_dialog(&mut self, entry: VaultEntry) {
+        self.edit_service = entry.service.clone();
+        self.edit_username = entry.username.clone();
+        self.edit_email = entry.email.clone();
+        self.edit_password = entry.password.clone();
+        self.edit_url = entry.url.clone();
+        self.edit_notes = entry.notes.clone();
+        self.edit_show_password = false;
+        self.editing_entry = Some(entry);
+        self.show_entry_dialog = true;
+    }
+
+    fn render_entry_dialog(&mut self, ctx: &egui::Context) {
+        let is_editing = self.editing_entry.is_some();
+        let title = if is_editing {
+            "Edit Account"
+        } else {
+            "Add New Account"
+        };
+
+        let mut close_dialog = false;
+        let mut save_entry = false;
+
+        egui::Window::new(title)
+            .collapsible(false)
+            .resizable(false)
+            .default_size([450.0, 380.0])
+            .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
+            .show(ctx, |ui| {
+                ui.vertical(|ui| {
+                    ui.label("Service / Website Name *");
+                    ui.add(egui::TextEdit::singleline(&mut self.edit_service).desired_width(400.0));
+
+                    ui.add_space(4.0);
+                    ui.label("Username");
+                    ui.add(
+                        egui::TextEdit::singleline(&mut self.edit_username).desired_width(400.0),
+                    );
+
+                    ui.add_space(4.0);
+                    ui.label("Email");
+                    ui.add(egui::TextEdit::singleline(&mut self.edit_email).desired_width(400.0));
+
+                    ui.add_space(4.0);
+                    ui.label("Password *");
+                    ui.add(
+                        egui::TextEdit::singleline(&mut self.edit_password)
+                            .password(true)
+                            .desired_width(400.0),
+                    );
+
+                    ui.add_space(4.0);
+                    ui.label("Notes (Optional)");
+                    ui.add(
+                        egui::TextEdit::multiline(&mut self.edit_notes)
+                            .desired_rows(3)
+                            .desired_width(400.0),
+                    );
+
+                    ui.add_space(12.0);
+                    ui.horizontal(|ui| {
+                        if ui.button(RichText::new("Save Entry").strong()).clicked()
+                            && !self.edit_service.trim().is_empty()
+                        {
+                            save_entry = true;
+                        }
+                        if ui.button("Cancel").clicked() {
+                            close_dialog = true;
+                        }
+                    });
+                });
+            });
+
+        if save_entry {
+            let service_name = self.edit_service.clone();
+            let is_update = self.editing_entry.is_some();
+
+            if let Some(vault) = &mut self.vault {
+                if let Some(existing) = &self.editing_entry {
+                    let mut updated = existing.clone();
+                    updated.service = self.edit_service.clone();
+                    updated.username = self.edit_username.clone();
+                    updated.email = self.edit_email.clone();
+                    updated.password = self.edit_password.clone();
+                    updated.url = self.edit_url.clone();
+                    updated.notes = self.edit_notes.clone();
+                    vault.update_entry(updated);
+                } else {
+                    let mut entry = VaultEntry::new(
+                        &self.edit_service,
+                        &self.edit_username,
+                        &self.edit_email,
+                        &self.edit_password,
+                    );
+                    entry.url = self.edit_url.clone();
+                    entry.notes = self.edit_notes.clone();
+                    vault.add_entry(entry);
+                }
+                if let Some(key) = &self.key {
+                    let _ = vault.save_to_file(&self.vault_path, key);
+                }
+            }
+
+            if is_update {
+                self.show_toast(format!("Updated {}", service_name));
+            } else {
+                self.show_toast(format!("Saved {}", service_name));
+            }
+            close_dialog = true;
+        }
+
+        if close_dialog {
+            self.show_entry_dialog = false;
+        }
+    }
+}
