@@ -478,12 +478,40 @@ impl RustyVaultApp {
                     ui.add(egui::TextEdit::singleline(&mut self.edit_email).desired_width(400.0));
 
                     ui.add_space(4.0);
-                    ui.label("Password *");
-                    ui.add(
-                        egui::TextEdit::singleline(&mut self.edit_password)
-                            .password(true)
-                            .desired_width(400.0),
-                    );
+                    ui.horizontal(|ui| {
+                        ui.label("Password *");
+                        if ui.button("🎲 Generate").clicked() {
+                            self.edit_password = generate_password(&self.generator_config);
+                        }
+                    });
+
+                    ui.horizontal(|ui| {
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.edit_password)
+                                .password(!self.edit_show_password)
+                                .desired_width(330.0),
+                        );
+                        if ui
+                            .button(if self.edit_show_password {
+                                "Hide"
+                            } else {
+                                "Show"
+                            })
+                            .clicked()
+                        {
+                            self.edit_show_password = !self.edit_show_password;
+                        }
+                    });
+
+                    if !self.edit_password.is_empty() {
+                        let entropy = calculate_entropy(&self.edit_password);
+                        let (rating, (r, g, b)) = strength_rating(entropy);
+                        ui.label(
+                            RichText::new(format!("Strength: {} ({:.1} bits)", rating, entropy))
+                                .color(Color32::from_rgb(r, g, b))
+                                .size(11.0),
+                        );
+                    }
 
                     ui.add_space(4.0);
                     ui.label("Notes (Optional)");
