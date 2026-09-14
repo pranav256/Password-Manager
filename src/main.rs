@@ -158,6 +158,10 @@ impl eframe::App for RustyVaultApp {
         if self.show_entry_dialog {
             self.render_entry_dialog(ctx);
         }
+
+        if self.show_generator_modal {
+            self.render_generator_dialog(ctx);
+        }
     }
 }
 
@@ -575,6 +579,107 @@ impl RustyVaultApp {
 
         if close_dialog {
             self.show_entry_dialog = false;
+        }
+    }
+
+    fn render_generator_dialog(&mut self, ctx: &egui::Context) {
+        let mut close_dialog = false;
+
+        egui::Window::new("Password Generator")
+            .collapsible(false)
+            .resizable(false)
+            .default_size([400.0, 320.0])
+            .anchor(egui::Align2::CENTER_CENTER, Vec2::ZERO)
+            .show(ctx, |ui| {
+                ui.vertical(|ui| {
+                    ui.label("Generated Password:");
+                    ui.horizontal(|ui| {
+                        ui.add(
+                            egui::TextEdit::singleline(&mut self.generated_password)
+                                .desired_width(320.0),
+                        );
+                        if ui.button("🔄").clicked() {
+                            self.generated_password = generate_password(&self.generator_config);
+                        }
+                    });
+
+                    let entropy = calculate_entropy(&self.generated_password);
+                    let (rating, (r, g, b)) = strength_rating(entropy);
+                    ui.label(
+                        RichText::new(format!("Entropy: {:.1} bits — {}", entropy, rating))
+                            .color(Color32::from_rgb(r, g, b)),
+                    );
+
+                    ui.add_space(10.0);
+                    ui.separator();
+                    ui.add_space(6.0);
+
+                    ui.horizontal(|ui| {
+                        ui.label("Length:");
+                        if ui
+                            .add(egui::Slider::new(&mut self.generator_config.length, 8..=64))
+                            .changed()
+                        {
+                            self.generated_password = generate_password(&self.generator_config);
+                        }
+                    });
+
+                    if ui
+                        .checkbox(
+                            &mut self.generator_config.uppercase,
+                            "Include Uppercase (A-Z)",
+                        )
+                        .changed()
+                    {
+                        self.generated_password = generate_password(&self.generator_config);
+                    }
+                    if ui
+                        .checkbox(
+                            &mut self.generator_config.lowercase,
+                            "Include Lowercase (a-z)",
+                        )
+                        .changed()
+                    {
+                        self.generated_password = generate_password(&self.generator_config);
+                    }
+                    if ui
+                        .checkbox(&mut self.generator_config.numbers, "Include Numbers (0-9)")
+                        .changed()
+                    {
+                        self.generated_password = generate_password(&self.generator_config);
+                    }
+                    if ui
+                        .checkbox(&mut self.generator_config.symbols, "Include Symbols (!@#$)")
+                        .changed()
+                    {
+                        self.generated_password = generate_password(&self.generator_config);
+                    }
+                    if ui
+                        .checkbox(
+                            &mut self.generator_config.exclude_ambiguous,
+                            "Exclude Ambiguous (0/O, 1/l)",
+                        )
+                        .changed()
+                    {
+                        self.generated_password = generate_password(&self.generator_config);
+                    }
+
+                    ui.add_space(12.0);
+                    ui.horizontal(|ui| {
+                        if ui.button("📋 Copy to Clipboard").clicked() {
+                            ui.output_mut(|o| o.copied_text = self.generated_password.clone());
+                            self.show_toast("Copied generated password to clipboard");
+                            close_dialog = true;
+                        }
+                        if ui.button("Close").clicked() {
+                            close_dialog = true;
+                        }
+                    });
+                });
+            });
+
+        if close_dialog {
+            self.show_generator_modal = false;
         }
     }
 }
