@@ -128,6 +128,12 @@ fn dirs_vault_path() -> PathBuf {
 
 impl eframe::App for RustyVaultApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        if let Some((_, time)) = &self.toast_message {
+            if time.elapsed().as_secs() > 3 {
+                self.toast_message = None;
+            }
+        }
+
         egui::TopBottomPanel::top("top_header").show(ctx, |ui| {
             ui.add_space(6.0);
             ui.horizontal(|ui| {
@@ -146,6 +152,16 @@ impl eframe::App for RustyVaultApp {
             });
             ui.add_space(6.0);
         });
+
+        if let Some((msg, _)) = &self.toast_message {
+            egui::TopBottomPanel::top("toast_panel").show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ui.label(
+                        RichText::new(format!("ℹ {}", msg)).color(Color32::from_rgb(100, 200, 120)),
+                    );
+                });
+            });
+        }
 
         egui::CentralPanel::default().show(ctx, |ui| {
             if self.is_locked {
